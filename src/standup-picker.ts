@@ -15,6 +15,10 @@ const app = new App({
   receiver: expressReceiver
 });
 
+app.message(async ({ say }) => {
+  await say("Hi :wave:");
+});
+
 const parseBody = (body: string | null) => {
   try {
     return JSON.parse(body ?? "");
