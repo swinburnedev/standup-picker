@@ -15,10 +15,6 @@ const app = new App({
   receiver: expressReceiver
 });
 
-app.message(async ({ say }) => {
-  await say("Hi :wave:");
-});
-
 const parseBody = (body: string | null) => {
   try {
     return JSON.parse(body ?? "");
@@ -28,6 +24,9 @@ const parseBody = (body: string | null) => {
 }
 
 export async function handler (event: APIGatewayEvent, context: Context) {
+  app.message(async ({ say }) => {
+    await say("Hi :wave:");
+  });
   const payload = parseBody(event.body);
   if(payload && payload.type && payload.type === 'url_verification') {
     return {
