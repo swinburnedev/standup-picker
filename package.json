@@ -3,7 +3,9 @@
     "description": "Standup picker app for Slack",
     "version": "0.0.1",
     "scripts": {
-        "build": "tsc"
+        "build": "tsc",
+        "serve:functions": "netlify build && netlify dev",
+        "serve:functions:live": "netlify build && netlify dev --live"
     },
     "author": {
         "name": "Andy Swinburne"
