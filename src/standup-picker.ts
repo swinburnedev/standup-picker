@@ -1,8 +1,16 @@
 import { App, ExpressReceiver } from '@slack/bolt';
 import { APIGatewayEvent, Context } from 'aws-lambda';
 import * as dotenv from 'dotenv';
-import url from 'url';
-import querystring from 'querystring';
+// import fetch, { Headers } from 'node-fetch';
+const fetch = require('node-fetch');
+// const headers = fetch.Headers;
+
+// if (!globalThis.fetch) {
+//   globalThis.fetch = fetch
+//   globalThis.Headers = Headers
+//   // globalThis.Request = Request
+//   // globalThis.Response = Response
+// }
 
 dotenv.config();
 
@@ -24,24 +32,66 @@ const parseBody = (body: string | null) => {
     return undefined;
   }
 }
+//new Headers(
+const headers = {
+  'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`, 
+  'Content-Type': 'application/json'
+};
+
+const channelMembers = async (channel: string) => {
+  const res = await fetch(`https://slack.com/api/conversations.members?channel=${channel}`, { headers });
+  const members = await res.json();
+  console.log('rtn members:', members);
+  return members.members;
+}
 
 export async function handler (event: APIGatewayEvent, context: Context) {
   // app.message(async ({ say }) => {
   //   await say("Hi :wave:");
   // });
-  console.log('event:', event);
+  // console.log('event:', event);
   const payload = parseBody(event.body);
+  // console.log('payload:', payload);
   const params = new URLSearchParams(payload);
-  if (params.has('channel_id') && params.has('')) {
+  console.log('params:', params);
+  let challenge;
+
+  if (params.has('challenge') && params.has('type') && params.get('type') === 'url_verification') {
+    challenge = params.get('challenge');
+    console.log('challenge:', challenge);
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ challenge: challenge })
+    };
+  }
+
+  console.log('payload event', payload.event);
+  // if (params.has('channel_id') && params.has('')) {
+  if (payload.event.channel) {
     console.log('we have channel_id and user_name');
-    // team_id = workspace --> required by some APIs
-    const channelId = params.get('channel_id') || '';
-    const pickedBy = params.get('user_name');
+    const channelId = payload.event.channel;
+    //params.get('channel_id') || '';
+
+    const members = await channelMembers(channelId);
+    console.log('members:', members);
+    // https://slack.com/api/conversations.members?channel=C03FD7EHTB6
+    // U039V6KBLB0 = me
+    // U02DR5KF1EC = evans
+    // U03G0UPGT7S = picker
+
+    const exclude = ['U03G0UPGT7S'];
+    //@ts-ignore
+    members.pop();
+    console.log('members pop:', members);
+    const randomMember = members[Math.floor(Math.random()*members.length)];
+    // members.filter( ( el ) => !exclude.includes( el ) );
+    console.log('randomMember:', randomMember);
+    const pickedBy = payload.event.user//params.get('user_name');
     const chosenOne = 'Lucky one';
     const options = {
       channel: channelId,
       token: `${process.env.SLACK_BOT_TOKEN}`,
-      text: `${chosenOne} you have been picked to lead standup by <@${pickedBy}>`
+      text: `<@${randomMember}> you have been picked to lead standup by <@${pickedBy}>`
     }
     app.client.chat.postMessage(options);
     // ChatPostMessageArguments
@@ -57,6 +107,6 @@ export async function handler (event: APIGatewayEvent, context: Context) {
 
   return {
     statusCode: 200,
-    body: "Hello, I'm a netlify function from <@andy.swinburne!>"
+    body: "Hey <@andy.swinburne>, you've been picked to lead stand up!"
   };
 }
