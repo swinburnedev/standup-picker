@@ -1,16 +1,7 @@
 import { App, ExpressReceiver } from '@slack/bolt';
 import { APIGatewayEvent, Context } from 'aws-lambda';
 import * as dotenv from 'dotenv';
-// import fetch, { Headers } from 'node-fetch';
 const fetch = require('node-fetch');
-// const headers = fetch.Headers;
-
-// if (!globalThis.fetch) {
-//   globalThis.fetch = fetch
-//   globalThis.Headers = Headers
-//   // globalThis.Request = Request
-//   // globalThis.Response = Response
-// }
 
 dotenv.config();
 
@@ -32,7 +23,7 @@ const parseBody = (body: string | null) => {
     return undefined;
   }
 }
-//new Headers(
+
 const headers = {
   'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`, 
   'Content-Type': 'application/json'
@@ -83,18 +74,23 @@ export async function handler (event: APIGatewayEvent, context: Context) {
     //@ts-ignore
     members.pop();
     console.log('members pop:', members);
-    const randomMember = members[Math.floor(Math.random()*members.length)];
+    const chosenOne = members[Math.floor(Math.random()*members.length)];
     // members.filter( ( el ) => !exclude.includes( el ) );
-    console.log('randomMember:', randomMember);
-    const pickedBy = payload.event.user//params.get('user_name');
-    const chosenOne = 'Lucky one';
-    const options = {
-      channel: channelId,
-      token: `${process.env.SLACK_BOT_TOKEN}`,
-      text: `<@${randomMember}> you have been picked to lead standup by <@${pickedBy}>`
+    console.log('chosenOne:', chosenOne);
+    const pickedBy = payload.event.user;;
+
+    try {
+      const options = {
+        channel: channelId,
+        token: `${process.env.SLACK_BOT_TOKEN}`,
+        text: `<@${chosenOne}> you have been picked to lead standup by <@${pickedBy}>`
+      }
+      
+      const result = await app.client.chat.postMessage(options);
+      console.log(result);
+    } catch (error) {
+      console.error(error);
     }
-    app.client.chat.postMessage(options);
-    // ChatPostMessageArguments
   }
   // token=cOL8eifChRf6yBCQuxyii1eF&team_id=T02KH7E64&team_domain=purplebricks&channel_id=C03FD7EHTB6&channel_name=standup-test&user_id=U039V6KBLB0&user_name=andy.swinburne&command=%2Fstandup&text=&api_app_id=A03FPEP2P5X&is_enterprise_install=false&response_url=https%3A%2F%2Fhooks.slack.com%2Fcommands%2FT02KH7E64%2F3534647301121%2FTaHd6W7h2vbMRLFEulNyFSKc&trigger_id=3522001156835.2663252208.1556c6a6c278877ead11137df6dba302',
 
@@ -107,6 +103,6 @@ export async function handler (event: APIGatewayEvent, context: Context) {
 
   return {
     statusCode: 200,
-    body: "Hey <@andy.swinburne>, you've been picked to lead stand up!"
+    body: "Hey <@Adam Glover>, you've been picked to lead stand up!"
   };
 }
